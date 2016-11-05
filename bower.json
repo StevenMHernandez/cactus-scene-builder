@@ -1,0 +1,19 @@
+{
+  "name": "cactus-scene-builder",
+  "main": "index.js",
+  "authors": [
+    "StevenmHernandez <contact@stevenHdesigns.com>"
+  ],
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery.flowchart": "^1.1.3",
+    "jquery": "^3.1.1",
+    "jquery-ui": "^1.12.1"
+  }
+}

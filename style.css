@@ -1,0 +1,30 @@
+* {
+    border: 0;
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+    width: 100%;
+}
+
+#flow_chart {
+    display: inline-block;
+    height: 100%;
+    width: 50%;
+}
+
+#canvas {
+    display: inline-block;
+    float: right;
+    height: 100%;
+    width: 50%;
+}
+
+.flowchart-operator {
+    background: url('http://orig04.deviantart.net/97d6/f/2014/257/b/5/animated_pixel_stars___box_background_by_driftwoodbones-d7z0h0p.gif');
+    background-size: cover;
+}
