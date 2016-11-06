@@ -26,11 +26,18 @@ $(document).ready(function () {
 
     var $flowchart = $('#flow_chart');
 
-    var test = $flowchart.flowchart({
+    $flowchart.flowchart({
         data: data,
         onOperatorSelect: function (operatorId) {
             var operator = $flowchart.flowchart('getOperatorData', operatorId);
-            // TODO: re-open image in editor
+
+            if (operator.canvas) {
+                loadCanvasData(operator.canvas)
+            } else {
+                setupCanvas();
+            }
+
+            selectedOperator = operatorId;
 
             return true;
         },
@@ -44,14 +51,18 @@ $(document).ready(function () {
     /////////
     // FLOWCHART HELPERS
 
+    var operatorI = 1;
+    var selectedOperator = "operator_" + operatorI;
+
     function getOperatorData(operatorId) {
         return $flowchart.flowchart('getOperatorData', operatorId);
     }
 
-    var operatorI = 1;
+    function setOperatorData(operatorId, data) {
+        return $flowchart.flowchart('setOperatorData', operatorId, data);
+    }
 
     function buildNewOperator() {
-        console.log(getFlowChartData());
         var prevOperator = getOperatorData("operator_" + operatorI);
 
         operatorI++;
@@ -86,6 +97,12 @@ $(document).ready(function () {
 
         $flowchart.flowchart('createOperator', operatorId, operatorData);
         $flowchart.flowchart('createLink', operatorId, linkData);
+
+        selectedOperator = "operator_" + operatorI;
+
+        // TODO: set id for the operator to set the canvas as bg-image
+
+        return operatorData
     }
 
     function getFlowChartData() {
@@ -97,9 +114,10 @@ $(document).ready(function () {
 
     $("#new_frame").on("click", function () {
         buildNewOperator();
+        saveCanvas();
     });
 
-    $("#reverse_frame").on("click", function () {
+    $("#invert_frame").on("click", function () {
         // TODO
     });
 
@@ -207,7 +225,56 @@ $(document).ready(function () {
     }).on("mouseup", function () {
         mouseClicked = false;
 
-        // TODO: store image data
+        saveCanvas();
     });
+
+    function saveCanvas() {
+        data = getOperatorData(selectedOperator);
+        data.canvas = getCanvasValue();
+        setOperatorData(selectedOperator, data);
+
+        storeAsBackgroundImage();
+    }
+
+    function storeAsBackgroundImage() {
+        // TODO
+        console.log(getOperatorData(selectedOperator));
+    }
+
+    function loadCanvasData(data) {
+        var string = "";
+        for(row in data) {
+            for (column in data[row]) {
+                ctx.fillStyle = data[row][column] ? "white" : "black";
+
+                ctx.fillRect(column * sz, row * sz, sz - 2, sz - 2);
+            }
+            string += "\n";
+        }
+    }
+
+    function getCanvasValue() {
+        var val = [];
+        for (var y = 0; y < canvas.height && y < maxH + 1; y += sz) {
+            var row = [];
+                for (var x = 0; x < canvas.width && x < maxW + 1; x += sz) {
+                row.push(ctx.getImageData(x, y, 1, 1).data[0] > 128);
+            }
+            val.push(row);
+        }
+
+        return val;
+    }
+
+    function logCanvasData(data) {
+        var string = "";
+        for(row in data) {
+            for (column in data[row]) {
+                string += (data[row][column] == 1) ? "1" : "0";
+            }
+            string += "\n";
+        }
+        console.log(string);
+    }
 });
 
