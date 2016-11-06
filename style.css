@@ -17,14 +17,39 @@ html, body {
     width: 50%;
 }
 
-#canvas {
+.editor {
+    background: black;
     display: inline-block;
     float: right;
     height: 100%;
     width: 50%;
 }
 
+.editor #canvas {
+    border: 1px solid #666;
+}
+
 .flowchart-operator {
     background: url('http://orig04.deviantart.net/97d6/f/2014/257/b/5/animated_pixel_stars___box_background_by_driftwoodbones-d7z0h0p.gif');
     background-size: cover;
+}
+
+div .buttons {
+    bottom: 0px;
+    padding: 10px;
+    position: fixed;
+    width: 50%;
+    z-index: 9999;
+}
+
+button {
+    margin-right: 5px;
+}
+
+button:last-of-type {
+    margin-right: 0;
+}
+
+.pull-right {
+    float: right;
 }
