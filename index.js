@@ -1,7 +1,41 @@
 $(document).ready(function () {
-    $(window).on('resize', function(){
+    $(window).on('resize', function () {
         setupCanvas();
     });
+
+    $(document).keydown(function(e) {
+        switch(e.which) {
+            case 37: // left
+                var current = getSelectedOperatorId();
+
+                current = current == 1 ? operatorI : --current;
+
+                reloadCanvas("operator_" + current);
+                break;
+            case 39: // right
+                var current = getSelectedOperatorId();
+
+                current = current == operatorI ? 1 : ++current;
+
+                reloadCanvas("operator_" + current);
+                break;
+
+            default: return; // exit this handler for other keys
+        }
+        e.preventDefault(); // prevent the default action (scroll / move caret)
+    });
+
+    function reloadCanvas(operatorId) {
+        var operator = getOperatorData(operatorId);
+
+        if (operator.canvas) {
+            loadCanvasData(operator.canvas)
+        } else {
+            setupCanvas();
+        }
+
+        selectedOperator = operatorId;
+    }
 
     var data = {
         operators: {
@@ -41,6 +75,11 @@ $(document).ready(function () {
 
             return true;
         },
+        onOperatorCreate: function (operatorId, operatorData, fullElement) {
+            fullElement.operator.attr("id", operatorId);
+
+            return true;
+        },
         onLinkSelect: function (linkId) {
             // TODO: potentially remove the link, or wait for double click
 
@@ -53,6 +92,10 @@ $(document).ready(function () {
 
     var operatorI = 1;
     var selectedOperator = "operator_" + operatorI;
+
+    function getSelectedOperatorId() {
+        return selectedOperator.split("_")[1];
+    }
 
     function getOperatorData(operatorId) {
         return $flowchart.flowchart('getOperatorData', operatorId);
@@ -68,7 +111,7 @@ $(document).ready(function () {
         operatorI++;
 
         var newL = prevOperator.left + 150 + 150 < $flowchart.width() ? prevOperator.left + 150 : 20;
-        var newT = newL == 20 ? prevOperator.top + 50 : prevOperator.top;
+        var newT = newL == 20 ? prevOperator.top + 150 : prevOperator.top;
 
         var operatorId = 'operator_' + operatorI;
         var operatorData = {
@@ -100,9 +143,7 @@ $(document).ready(function () {
 
         selectedOperator = "operator_" + operatorI;
 
-        // TODO: set id for the operator to set the canvas as bg-image
-
-        return operatorData
+        return operatorData;
     }
 
     function getFlowChartData() {
@@ -183,13 +224,13 @@ $(document).ready(function () {
         ctx.strokeStyle = '#999';
         ctx.lineWidth = 1;
 
-        for (var i = 0; i < canvas.width && i < maxW + 1; i += sz) {
+        for (var i = 0; i < canvas.width && i < maxW; i += sz) {
             ctx.beginPath();
             ctx.moveTo(i - 1, 0);
             ctx.lineTo(i - 1, maxH);
             ctx.stroke();
         }
-        for (var i = 0; i < canvas.height && i < maxH + 1; i += sz) {
+        for (var i = 0; i < canvas.height && i < maxH; i += sz) {
             ctx.beginPath();
             ctx.moveTo(0, i - 1);
             ctx.lineTo(maxW, i - 1);
@@ -237,13 +278,18 @@ $(document).ready(function () {
     }
 
     function storeAsBackgroundImage() {
-        // TODO
-        console.log(getOperatorData(selectedOperator));
+        var img = canvas.toDataURL("image/png");
+
+        console.log($("#" + selectedOperator));
+
+        $("#" + selectedOperator).css("background-image", 'url(' + img + ')');
+
+        console.log(img);
     }
 
     function loadCanvasData(data) {
         var string = "";
-        for(row in data) {
+        for (row in data) {
             for (column in data[row]) {
                 ctx.fillStyle = data[row][column] ? "white" : "black";
 
@@ -257,7 +303,7 @@ $(document).ready(function () {
         var val = [];
         for (var y = 0; y < canvas.height && y < maxH + 1; y += sz) {
             var row = [];
-                for (var x = 0; x < canvas.width && x < maxW + 1; x += sz) {
+            for (var x = 0; x < canvas.width && x < maxW + 1; x += sz) {
                 row.push(ctx.getImageData(x, y, 1, 1).data[0] > 128);
             }
             val.push(row);
@@ -268,7 +314,7 @@ $(document).ready(function () {
 
     function logCanvasData(data) {
         var string = "";
-        for(row in data) {
+        for (row in data) {
             for (column in data[row]) {
                 string += (data[row][column] == 1) ? "1" : "0";
             }
