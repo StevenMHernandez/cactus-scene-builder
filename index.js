@@ -1,10 +1,12 @@
 $(document).ready(function () {
     $(window).on('resize', function () {
         setupCanvas();
+
+        reloadCanvas(selectedOperator);
     });
 
-    $(document).keydown(function(e) {
-        switch(e.which) {
+    $(document).keydown(function (e) {
+        switch (e.which) {
             case 37: // left
                 var current = getSelectedOperatorId();
 
@@ -20,7 +22,8 @@ $(document).ready(function () {
                 reloadCanvas("operator_" + current);
                 break;
 
-            default: return; // exit this handler for other keys
+            default:
+                return; // exit this handler for other keys
         }
         e.preventDefault(); // prevent the default action (scroll / move caret)
     });
@@ -159,12 +162,33 @@ $(document).ready(function () {
     });
 
     $("#invert_frame").on("click", function () {
-        // TODO
+        var operator = getOperatorData(selectedOperator);
+
+        for (row in operator.canvas) {
+            for (column in operator.canvas[row]) {
+                operator.canvas[row][column] ^= 1;
+            }
+        }
+
+        setOperatorData(selectedOperator, operator);
+
+        reloadCanvas(selectedOperator);
     });
 
     $("#clear_frame").on("click", function () {
-        // TODO
+        var operator = getOperatorData(selectedOperator);
+
+        for (row in operator.canvas) {
+            for (column in operator.canvas[row]) {
+                operator.canvas[row][column] = 0;
+            }
+        }
+
+        setOperatorData(selectedOperator, operator);
+
+        reloadCanvas(selectedOperator);
     });
+
 
     /////////
     // CANVAS
@@ -175,7 +199,7 @@ $(document).ready(function () {
 
     var maxW, maxH, sz;
 
-    var screen_image_height = 32;
+    var screen_image_height = 64;
 
     setupCanvas();
 
