@@ -173,6 +173,8 @@ $(document).ready(function () {
         setOperatorData(selectedOperator, operator);
 
         reloadCanvas(selectedOperator);
+
+        saveCanvas();
     });
 
     $("#clear_frame").on("click", function () {
@@ -187,6 +189,12 @@ $(document).ready(function () {
         setOperatorData(selectedOperator, operator);
 
         reloadCanvas(selectedOperator);
+    });
+
+    var flood = false;
+
+    $("#flood_tool").on("click", function () {
+        flood = !flood;
     });
 
 
@@ -267,10 +275,19 @@ $(document).ready(function () {
     }
 
     function getXY(e) {
-        return {
+        var obj = {
             x: e.clientX - canvas.offsetLeft,
             y: e.clientY - canvas.offsetTop
-        }
+        };
+
+        obj.row = Math.floor(obj.y / sz);
+        obj.column = Math.floor(obj.x / sz);
+
+        return obj;
+    }
+
+    function getPixelToDataXY(int) {
+        return Math.floor(int / sz);
     }
 
     $("#canvas").on("mousemove", function (e) {
@@ -284,9 +301,19 @@ $(document).ready(function () {
 
         var color = ctx.getImageData(coords.x, coords.y, 1, 1).data;
 
-        ctx.fillStyle = color[0] < 128 ? "white" : "black";
+        if (flood) {
+            var canvas = getOperatorData(selectedOperator).canvas;
 
-        draw(e);
+            var newData = getOperatorData(selectedOperator);
+            newData.canvas = floodFill(canvas, coords.row, coords.column, !canvas[coords.row][coords.column]);
+            setOperatorData(selectedOperator, newData);
+
+            reloadCanvas(selectedOperator);
+        } else {
+            ctx.fillStyle = color[0] < 128 ? "white" : "black";
+
+            draw(e);
+        }
     }).on("mouseup", function () {
         mouseClicked = false;
 
@@ -299,6 +326,8 @@ $(document).ready(function () {
         setOperatorData(selectedOperator, data);
 
         storeAsBackgroundImage();
+
+        //console.log(dataToBin(data.canvas));
     }
 
     function storeAsBackgroundImage() {
@@ -307,8 +336,6 @@ $(document).ready(function () {
         console.log($("#" + selectedOperator));
 
         $("#" + selectedOperator).css("background-image", 'url(' + img + ')');
-
-        console.log(img);
     }
 
     function loadCanvasData(data) {
@@ -336,15 +363,48 @@ $(document).ready(function () {
         return val;
     }
 
+    function floodFill(data, row, col, newValue) {
+        if (row < 0 || row >= screen_image_height
+            || col < 0 || col >= screen_image_height) {
+            return data;
+        }
+
+        if (data[row][col] != newValue) {
+            data[row][col] = newValue;
+
+            data = floodFill(data, row, col + 1, newValue);
+            data = floodFill(data, row, col - 1, newValue);
+            data = floodFill(data, row + 1, col, newValue);
+            data = floodFill(data, row - 1, col, newValue);
+        }
+
+        return data;
+    }
+
     function logCanvasData(data) {
         var string = "";
-        for (row in data) {
+        for (var row in data) {
             for (column in data[row]) {
                 string += (data[row][column] == 1) ? "1" : "0";
             }
             string += "\n";
         }
         console.log(string);
+    }
+
+    function dataToBin(data) {
+        var string = "";
+        for (row in data) {
+            for (column in data[row]) {
+                string += (data[row][column] == 1) ? "1" : "0";
+            }
+        }
+
+        var chars = string.match(/.{8}/g);
+
+        return chars.map(function (c) {
+            return String.fromCharCode(parseInt(c, 2));
+        }).join("");
     }
 });
 
