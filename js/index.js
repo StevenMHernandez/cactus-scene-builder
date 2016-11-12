@@ -1,11 +1,15 @@
 requirejs.config({
     paths: {
         filesaver: '../bower_components/file-saver/FileSaver',
-        jszip: '../bower_components/jszip/dist/jszip'
+        jszip: '../bower_components/jszip/dist/jszip',
+        modalbox: '../bower_components/modalBox/modalBox',
     }
 });
 
-require(['flowchart', 'paint', 'canvas', 'convert', 'config', 'jszip', 'filesaver'], function (flowchart, paint, cv, convert, config, jszip) {
+// DEBUG:
+delete require.cache;
+
+require(['flowchart', 'paint', 'canvas', 'convert', 'jszip', 'config', 'filesaver', 'modalbox'], function (flowchart, paint, cv, convert, jszip) {
 
     /////////////////////
     // DOCUMENT LISTENERS
@@ -17,23 +21,44 @@ require(['flowchart', 'paint', 'canvas', 'convert', 'config', 'jszip', 'filesave
     });
 
     $(document).keydown(function (e) {
-        switch (e.which) {
-            case 37: // left
-                flowchart.switchOperators(flowchart.getPreviousOperatorId());
-                printOntoCanvas();
-                break;
-            case 39: // right
-                flowchart.switchOperators(flowchart.getNextOperatorId());
-                printOntoCanvas();
-                break;
-            default:
-                return;
+        if (!ignoreKeyDownEvents) {
+            switch (e.which) {
+                case 37: // left
+                    flowchart.switchOperators(flowchart.getPreviousOperatorId());
+                    printOntoCanvas();
+                    break;
+                case 39: // right
+                    flowchart.switchOperators(flowchart.getNextOperatorId());
+                    printOntoCanvas();
+                    break;
+                default:
+                    return;
+            }
+            e.preventDefault();
         }
-        e.preventDefault();
     });
 
     ////////////////////
     // TOOLBAR LISTENERS
+
+    $("#open_details_modal").on("click", function () {
+        ignoreKeyDownEvents = true;
+
+        $('.modalBox').modalBox({
+            keyClose: true,
+            bodyClose: true
+        });
+
+        var $textarea = $('.modalBox textarea');
+        var width = $textarea.outerWidth();
+        $textarea.css('maxWidth', width);
+        $textarea.css('minWidth', width);
+    });
+
+    $('.modalBox .background').on('click', function () {
+        $('.modalBox').modalBox('close');
+        ignoreKeyDownEvents = false;
+    });
 
     $("#save_to_file").on("click", function () {
         var operators = flowchart.getAllOperators();
@@ -45,9 +70,16 @@ require(['flowchart', 'paint', 'canvas', 'convert', 'config', 'jszip', 'filesave
             zip.file(i + ".txt", convert.dataToBin(o.canvas));
         }
 
+        zip.file("message.txt", $("#message").val());
+        zip.file("config.txt", JSON.stringify({
+            delay: $("#delay").val(),
+        }));
+
+        var title = $("#title").val() ? convert.slugify($("#title").val()) : "scene";
+
         zip.generateAsync({type: "blob"})
             .then(function (blob) {
-                saveAs(blob, "scene.zip");
+                saveAs(blob, title + ".zip");
             });
     });
 
@@ -81,8 +113,9 @@ require(['flowchart', 'paint', 'canvas', 'convert', 'config', 'jszip', 'filesave
         printOntoCanvas();
     });
 
-    $("#flood_tool").on("click", function () {
+    $("#flood_tool").on("click", function (e) {
         flood ^= 1;
+        e.currentTarget.textContent = flood ? "Draw Tool" : "Flood Fill";
     });
 
     /////////////////////
@@ -125,6 +158,7 @@ require(['flowchart', 'paint', 'canvas', 'convert', 'config', 'jszip', 'filesave
     ///////////////
     // GLOBAL FLAGS
 
+    var ignoreKeyDownEvents = false;
     var mouseClicked = false;
     var flood = false;
 

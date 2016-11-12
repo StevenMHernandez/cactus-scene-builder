@@ -57,6 +57,8 @@ define(function (require) {
             ctx.lineTo(maxW, i - 1);
             ctx.stroke();
         }
+
+        canvas.style.border = "1px solid #666";
     }
 
     var printOntoCanvas = function (data) {
