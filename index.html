@@ -8,12 +8,16 @@
     <script src="bower_components/jquery/dist/jquery.js"></script>
     <script src="bower_components/jquery-ui/jquery-ui.js"></script>
     <script src="bower_components/jquery.flowchart/jquery.flowchart.js"></script>
-    <!--<script src="index.js"></script>-->
     <script src="bower_components/requirejs/require.js" data-main="js/index"></script>
 </head>
 <body>
 
 <div id="flow_chart">
+    <div class="toolbar">
+        <div class="pull-right">
+            <button id="save_to_file">Save Scene</button>
+        </div>
+    </div>
     <div class="buttons">
         <button id="new_frame">New Frame</button>
         <div class="pull-right">

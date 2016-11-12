@@ -1,4 +1,11 @@
-require(['flowchart', 'paint', 'canvas', 'config'], function (flowchart, paint, cv) {
+requirejs.config({
+    paths: {
+        filesaver: '../bower_components/file-saver/FileSaver',
+        jszip: '../bower_components/jszip/dist/jszip'
+    }
+});
+
+require(['flowchart', 'paint', 'canvas', 'convert', 'config', 'jszip', 'filesaver'], function (flowchart, paint, cv, convert, config, jszip) {
 
     /////////////////////
     // DOCUMENT LISTENERS
@@ -6,21 +13,42 @@ require(['flowchart', 'paint', 'canvas', 'config'], function (flowchart, paint, 
     $(window).on('resize', function () {
         cv.setup();
 
-        reloadCanvas();
+        printOntoCanvas();
     });
 
     $(document).keydown(function (e) {
         switch (e.which) {
             case 37: // left
-                reloadCanvas(flowchart.getPreviousOperatorId());
+                flowchart.switchOperators(flowchart.getPreviousOperatorId());
+                printOntoCanvas();
                 break;
             case 39: // right
-                reloadCanvas(flowchart.getNextOperatorId());
+                flowchart.switchOperators(flowchart.getNextOperatorId());
+                printOntoCanvas();
                 break;
             default:
                 return;
         }
         e.preventDefault();
+    });
+
+    ////////////////////
+    // TOOLBAR LISTENERS
+
+    $("#save_to_file").on("click", function () {
+        var operators = flowchart.getAllOperators();
+
+        var zip = new jszip();
+
+        for (var i = 1; i <= flowchart.getOperatorCount(); i++) {
+            var o = operators['operator_' + i];
+            zip.file(i + ".txt", convert.dataToBin(o.canvas));
+        }
+
+        zip.generateAsync({type: "blob"})
+            .then(function (blob) {
+                saveAs(blob, "scene.zip");
+            });
     });
 
     ////////////////////
@@ -38,7 +66,7 @@ require(['flowchart', 'paint', 'canvas', 'config'], function (flowchart, paint, 
 
         saveToCanvas(canvas);
 
-        reloadCanvas();
+        printOntoCanvas();
 
         saveCanvas();
     });
@@ -50,7 +78,7 @@ require(['flowchart', 'paint', 'canvas', 'config'], function (flowchart, paint, 
 
         saveToCanvas(canvas);
 
-        reloadCanvas();
+        printOntoCanvas();
     });
 
     $("#flood_tool").on("click", function () {
@@ -82,7 +110,7 @@ require(['flowchart', 'paint', 'canvas', 'config'], function (flowchart, paint, 
         if (flood) {
             flowchart.setData('canvas', paint.floodFill(canvas, coords.row, coords.column, !canvas[coords.row][coords.column]));
 
-            reloadCanvas();
+            printOntoCanvas();
         } else {
             var color = canvas && canvas[coords.row][coords.column] ? "black" : "white";
 
@@ -110,14 +138,8 @@ require(['flowchart', 'paint', 'canvas', 'config'], function (flowchart, paint, 
     /////////////////
     // CANVAS HELPERS
 
-    function reloadCanvas(operatorId) {
-        if (!operatorId) {
-            operatorId = flowchart.getSelectedOperatorId();
-        }
-
+    function printOntoCanvas(operatorId) {
         cv.printOntoCanvas(currentCanvas());
-
-        flowchart.switchOperators(operatorId);
     }
 
     function saveCanvas() {

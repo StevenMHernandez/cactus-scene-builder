@@ -134,6 +134,18 @@ define(function () {
         selectedOperatorId = id;
     };
 
+    var getAllOperators = function () {
+        return $flowchart.flowchart('getData').operators;
+    };
+
+    var getAllLinks = function () {
+        return $flowchart.flowchart('getData').links;
+    };
+
+    var getOperatorCount = function () {
+        return operatorI;
+    };
+
     return {
         init: init,
         buildNewOperator: buildNewOperator,
@@ -144,5 +156,8 @@ define(function () {
         getNextOperatorId: getNextOperatorId,
         setData: setData,
         switchOperators: switchOperators,
+        getAllOperators: getAllOperators,
+        getAllLinks: getAllLinks,
+        getOperatorCount: getOperatorCount,
     };
 });

@@ -35,8 +35,16 @@ html, body {
     height: 140px !important;
 }
 
+div .toolbar {
+    top: 0;
+    padding: 10px;
+    position: fixed;
+    width: 50%;
+    z-index: 9999;
+}
+
 div .buttons {
-    bottom: 0px;
+    bottom: 0;
     padding: 10px;
     position: fixed;
     width: 50%;
