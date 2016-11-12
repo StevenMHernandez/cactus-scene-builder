@@ -1,318 +1,92 @@
-$(document).ready(function () {
-    $(window).on('resize', function () {
-        setupCanvas();
+require(['flowchart', 'paint', 'canvas', 'config'], function (flowchart, paint, cv) {
 
-        reloadCanvas(selectedOperator);
+    /////////////////////
+    // DOCUMENT LISTENERS
+
+    $(window).on('resize', function () {
+        cv.setup();
+
+        reloadCanvas();
     });
 
     $(document).keydown(function (e) {
         switch (e.which) {
             case 37: // left
-                var current = getSelectedOperatorId();
-
-                current = current == 1 ? operatorI : --current;
-
-                reloadCanvas("operator_" + current);
+                reloadCanvas(flowchart.getPreviousOperatorId());
                 break;
             case 39: // right
-                var current = getSelectedOperatorId();
-
-                current = current == operatorI ? 1 : ++current;
-
-                reloadCanvas("operator_" + current);
+                reloadCanvas(flowchart.getNextOperatorId());
                 break;
-
             default:
-                return; // exit this handler for other keys
+                return;
         }
-        e.preventDefault(); // prevent the default action (scroll / move caret)
+        e.preventDefault();
     });
 
-    function reloadCanvas(operatorId) {
-        var operator = getOperatorData(operatorId);
-
-        if (operator.canvas) {
-            loadCanvasData(operator.canvas)
-        } else {
-            setupCanvas();
-        }
-
-        selectedOperator = operatorId;
-    }
-
-    var data = {
-        operators: {
-            operator_1: {
-                top: 20,
-                left: 20,
-                properties: {
-                    inputs: {
-                        input_1: {
-                            label: '(:i)'
-                        }
-                    },
-                    outputs: {
-                        output_1: {
-                            label: '(:i)'
-                        }
-                    }
-                }
-            }
-        }
-    };
-
-    var $flowchart = $('#flow_chart');
-
-    $flowchart.flowchart({
-        data: data,
-        onOperatorSelect: function (operatorId) {
-            var operator = $flowchart.flowchart('getOperatorData', operatorId);
-
-            if (operator.canvas) {
-                loadCanvasData(operator.canvas)
-            } else {
-                setupCanvas();
-            }
-
-            selectedOperator = operatorId;
-
-            return true;
-        },
-        onOperatorCreate: function (operatorId, operatorData, fullElement) {
-            fullElement.operator.attr("id", operatorId);
-
-            return true;
-        },
-        onLinkSelect: function (linkId) {
-            // TODO: potentially remove the link, or wait for double click
-
-            return true;
-        }
-    });
-
-    /////////
-    // FLOWCHART HELPERS
-
-    var operatorI = 1;
-    var selectedOperator = "operator_" + operatorI;
-
-    function getSelectedOperatorId() {
-        return selectedOperator.split("_")[1];
-    }
-
-    function getOperatorData(operatorId) {
-        return $flowchart.flowchart('getOperatorData', operatorId);
-    }
-
-    function setOperatorData(operatorId, data) {
-        return $flowchart.flowchart('setOperatorData', operatorId, data);
-    }
-
-    function buildNewOperator() {
-        var prevOperator = getOperatorData("operator_" + operatorI);
-
-        operatorI++;
-
-        var newL = prevOperator.left + 150 + 150 < $flowchart.width() ? prevOperator.left + 150 : 20;
-        var newT = newL == 20 ? prevOperator.top + 150 : prevOperator.top;
-
-        var operatorId = 'operator_' + operatorI;
-        var operatorData = {
-            top: newT,
-            left: newL,
-            properties: {
-                inputs: {
-                    input_1: {
-                        label: '(:i)'
-                    }
-                },
-                outputs: {
-                    output_1: {
-                        label: '(:i)'
-                    }
-                }
-            }
-        };
-
-        var linkData = {
-            fromConnector: "output_1",
-            toConnector: "input_1",
-            fromOperator: "operator_" + (operatorI - 1),
-            toOperator: "operator_" + operatorI
-        };
-
-        $flowchart.flowchart('createOperator', operatorId, operatorData);
-        $flowchart.flowchart('createLink', operatorId, linkData);
-
-        selectedOperator = "operator_" + operatorI;
-
-        return operatorData;
-    }
-
-    function getFlowChartData() {
-        return $flowchart.flowchart('getData');
-    }
-
-    /////////
-    // CONTROLS
+    ////////////////////
+    // CONTROL LISTENERS
 
     $("#new_frame").on("click", function () {
-        buildNewOperator();
+        flowchart.buildNewOperator();
         saveCanvas();
     });
 
     $("#invert_frame").on("click", function () {
-        var operator = getOperatorData(selectedOperator);
+        var canvas = currentCanvas();
 
-        for (row in operator.canvas) {
-            for (column in operator.canvas[row]) {
-                operator.canvas[row][column] ^= 1;
-            }
-        }
+        canvas = paint.invert(canvas);
 
-        setOperatorData(selectedOperator, operator);
+        saveToCanvas(canvas);
 
-        reloadCanvas(selectedOperator);
+        reloadCanvas();
 
         saveCanvas();
     });
 
     $("#clear_frame").on("click", function () {
-        var operator = getOperatorData(selectedOperator);
+        var canvas = currentCanvas();
 
-        for (row in operator.canvas) {
-            for (column in operator.canvas[row]) {
-                operator.canvas[row][column] = 0;
-            }
-        }
+        canvas = paint.clear(canvas);
 
-        setOperatorData(selectedOperator, operator);
+        saveToCanvas(canvas);
 
-        reloadCanvas(selectedOperator);
+        reloadCanvas();
     });
-
-    var flood = false;
 
     $("#flood_tool").on("click", function () {
-        flood = !flood;
+        flood ^= 1;
     });
 
+    /////////////////////
+    // OPERATOR LISTENERS
 
-    /////////
-    // CANVAS
+    var onOperatorSelect = function (operator) {
+        cv.printOntoCanvas(operator.canvas)
+    };
 
-    var canvas = document.getElementById("canvas");
-    var ctx = canvas.getContext("2d");
-    var mouseClicked = false;
-
-    var maxW, maxH, sz;
-
-    var screen_image_height = 64;
-
-    setupCanvas();
-
-    function setupCanvas() {
-        setCanvasSize();
-
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-        loadGrid();
-    }
-
-    function setCanvasSize() {
-        editBox = document.getElementById("edit");
-        $editBox = $("#edit");
-
-        canvas.width = window.innerWidth - canvas.offsetLeft;
-        canvas.height = window.innerHeight - canvas.offsetTop;
-
-        var widthToHeightRatio = 1; // normally 2, but we will only see the middle square
-
-        if ($editBox.width() / widthToHeightRatio > $editBox.height()) {
-            sz = $editBox.height() / screen_image_height;
-        } else {
-            sz = $editBox.width() / (screen_image_height * widthToHeightRatio);
-        }
-        sz = Math.floor(sz);
-
-        maxH = sz * screen_image_height;
-        maxW = maxH * widthToHeightRatio;
-
-        canvas.width = maxW;
-        canvas.height = maxH;
-
-        canvas.style.marginLeft = (($editBox.width() - canvas.width) / 2) + "px";
-        canvas.style.marginTop = (($editBox.height() - canvas.height) / 2) + "px";
-    }
-
-    function draw(e) {
-        var coords = getXY(e);
-
-        ctx.fillRect(Math.floor(coords.x / sz) * sz, Math.floor(coords.y / sz) * sz, sz - 2, sz - 2);
-    }
-
-    function drawGrid() {
-        ctx.strokeStyle = '#999';
-        ctx.lineWidth = 1;
-
-        for (var i = 0; i < canvas.width && i < maxW; i += sz) {
-            ctx.beginPath();
-            ctx.moveTo(i - 1, 0);
-            ctx.lineTo(i - 1, maxH);
-            ctx.stroke();
-        }
-        for (var i = 0; i < canvas.height && i < maxH; i += sz) {
-            ctx.beginPath();
-            ctx.moveTo(0, i - 1);
-            ctx.lineTo(maxW, i - 1);
-            ctx.stroke();
-        }
-    }
-
-    function loadGrid() {
-        drawGrid();
-    }
-
-    function getXY(e) {
-        var obj = {
-            x: e.clientX - canvas.offsetLeft,
-            y: e.clientY - canvas.offsetTop
-        };
-
-        obj.row = Math.floor(obj.y / sz);
-        obj.column = Math.floor(obj.x / sz);
-
-        return obj;
-    }
-
-    function getPixelToDataXY(int) {
-        return Math.floor(int / sz);
-    }
+    ///////////////////
+    // CANVAS LISTENERS
 
     $("#canvas").on("mousemove", function (e) {
-        if (mouseClicked) {
-            draw(e);
+        if (mouseClicked && !flood) {
+            var coords = cv.getXY(e);
+
+            cv.draw(coords.x, coords.y);
         }
     }).on("mousedown", function (e) {
         mouseClicked = true;
 
-        var coords = getXY(e);
+        var coords = cv.getXY(e);
 
-        var color = ctx.getImageData(coords.x, coords.y, 1, 1).data;
-
+        var canvas = currentCanvas();
         if (flood) {
-            var canvas = getOperatorData(selectedOperator).canvas;
+            flowchart.setData('canvas', paint.floodFill(canvas, coords.row, coords.column, !canvas[coords.row][coords.column]));
 
-            var newData = getOperatorData(selectedOperator);
-            newData.canvas = floodFill(canvas, coords.row, coords.column, !canvas[coords.row][coords.column]);
-            setOperatorData(selectedOperator, newData);
-
-            reloadCanvas(selectedOperator);
+            reloadCanvas();
         } else {
-            ctx.fillStyle = color[0] < 128 ? "white" : "black";
+            var color = canvas && canvas[coords.row][coords.column] ? "black" : "white";
 
-            draw(e);
+            cv.draw(coords.x, coords.y, color);
         }
     }).on("mouseup", function () {
         mouseClicked = false;
@@ -320,91 +94,51 @@ $(document).ready(function () {
         saveCanvas();
     });
 
+    ///////////////
+    // GLOBAL FLAGS
+
+    var mouseClicked = false;
+    var flood = false;
+
+    ///////
+    // MAIN
+
+    flowchart.init(onOperatorSelect);
+    cv.setup();
+    saveCanvas();
+
+    /////////////////
+    // CANVAS HELPERS
+
+    function reloadCanvas(operatorId) {
+        if (!operatorId) {
+            operatorId = flowchart.getSelectedOperatorId();
+        }
+
+        cv.printOntoCanvas(currentCanvas());
+
+        flowchart.switchOperators(operatorId);
+    }
+
     function saveCanvas() {
-        data = getOperatorData(selectedOperator);
-        data.canvas = getCanvasValue();
-        setOperatorData(selectedOperator, data);
+        flowchart.setData('canvas', cv.getValue());
 
         storeAsBackgroundImage();
-
-        //console.log(dataToBin(data.canvas));
     }
 
     function storeAsBackgroundImage() {
         var img = canvas.toDataURL("image/png");
 
-        console.log($("#" + selectedOperator));
-
-        $("#" + selectedOperator).css("background-image", 'url(' + img + ')');
+        $("#" + flowchart.getSelectedOperatorId()).css("background-image", 'url(' + img + ')');
     }
 
-    function loadCanvasData(data) {
-        var string = "";
-        for (row in data) {
-            for (column in data[row]) {
-                ctx.fillStyle = data[row][column] ? "white" : "black";
-
-                ctx.fillRect(column * sz, row * sz, sz - 2, sz - 2);
-            }
-            string += "\n";
-        }
+    function currentCanvas() {
+        return flowchart.getSelectedOperatorData().canvas;
     }
 
-    function getCanvasValue() {
-        var val = [];
-        for (var y = 0; y < canvas.height && y < maxH + 1; y += sz) {
-            var row = [];
-            for (var x = 0; x < canvas.width && x < maxW + 1; x += sz) {
-                row.push(ctx.getImageData(x, y, 1, 1).data[0] > 128);
-            }
-            val.push(row);
-        }
-
-        return val;
-    }
-
-    function floodFill(data, row, col, newValue) {
-        if (row < 0 || row >= screen_image_height
-            || col < 0 || col >= screen_image_height) {
-            return data;
-        }
-
-        if (data[row][col] != newValue) {
-            data[row][col] = newValue;
-
-            data = floodFill(data, row, col + 1, newValue);
-            data = floodFill(data, row, col - 1, newValue);
-            data = floodFill(data, row + 1, col, newValue);
-            data = floodFill(data, row - 1, col, newValue);
-        }
-
-        return data;
-    }
-
-    function logCanvasData(data) {
-        var string = "";
-        for (var row in data) {
-            for (column in data[row]) {
-                string += (data[row][column] == 1) ? "1" : "0";
-            }
-            string += "\n";
-        }
-        console.log(string);
-    }
-
-    function dataToBin(data) {
-        var string = "";
-        for (row in data) {
-            for (column in data[row]) {
-                string += (data[row][column] == 1) ? "1" : "0";
-            }
-        }
-
-        var chars = string.match(/.{8}/g);
-
-        return chars.map(function (c) {
-            return String.fromCharCode(parseInt(c, 2));
-        }).join("");
+    function saveToCanvas(canvas) {
+        var op = flowchart.getSelectedOperatorData();
+        op.canvas = canvas;
+        flowchart.updateOperator(op);
     }
 });
-
