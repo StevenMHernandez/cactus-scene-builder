@@ -22,17 +22,44 @@ require(['flowchart', 'paint', 'canvas', 'convert', 'jszip', 'config', 'filesave
 
     $(document).keydown(function (e) {
         if (!ignoreKeyDownEvents) {
-            switch (e.which) {
-                case 37: // left
-                    flowchart.switchOperators(flowchart.getPreviousOperatorId());
-                    printOntoCanvas();
-                    break;
-                case 39: // right
-                    flowchart.switchOperators(flowchart.getNextOperatorId());
-                    printOntoCanvas();
-                    break;
-                default:
-                    return;
+            if (e.metaKey || e.ctrlKey) {
+                switch (e.which) {
+                    case 37: // left
+                        saveToCanvas(paint.shiftLeft(currentCanvas()));
+                        printOntoCanvas();
+                        saveCanvas();
+                        break;
+                    case 38: // up
+                        saveToCanvas(paint.shiftUp(currentCanvas()));
+                        printOntoCanvas();
+                        saveCanvas();
+                        break;
+                    case 39: // right
+                        saveToCanvas(paint.shiftRight(currentCanvas()));
+                        printOntoCanvas();
+                        saveCanvas();
+                        break;
+                    case 40: // down
+                        saveToCanvas(paint.shiftDown(currentCanvas()));
+                        printOntoCanvas();
+                        saveCanvas();
+                        break;
+                    default:
+                        return;
+                }
+            } else {
+                switch (e.which) {
+                    case 37: // left
+                        flowchart.switchOperators(flowchart.getPreviousOperatorId());
+                        printOntoCanvas();
+                        break;
+                    case 39: // right
+                        flowchart.switchOperators(flowchart.getNextOperatorId());
+                        printOntoCanvas();
+                        break;
+                    default:
+                        return;
+                }
             }
             e.preventDefault();
         }
@@ -150,6 +177,10 @@ require(['flowchart', 'paint', 'canvas', 'convert', 'jszip', 'config', 'filesave
             cv.draw(coords.x, coords.y, color);
         }
     }).on("mouseup", function () {
+        mouseClicked = false;
+
+        saveCanvas();
+    }).on("mouseout", function() {
         mouseClicked = false;
 
         saveCanvas();
