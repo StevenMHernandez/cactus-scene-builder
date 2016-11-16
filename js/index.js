@@ -94,7 +94,7 @@ require(['flowchart', 'paint', 'canvas', 'convert', 'jszip', 'config', 'filesave
 
         for (var i = 1; i <= flowchart.getOperatorCount(); i++) {
             var o = operators['operator_' + i];
-            zip.file(i + ".txt", convert.dataToBin(o.canvas));
+            zip.file(i + ".bin", convert.realDataToBin(o.canvas));
         }
 
         zip.file("message.txt", $("#message").val());
@@ -181,9 +181,11 @@ require(['flowchart', 'paint', 'canvas', 'convert', 'jszip', 'config', 'filesave
 
         saveCanvas();
     }).on("mouseout", function() {
-        mouseClicked = false;
+        if (mouseClicked) {
+            mouseClicked = false;
 
-        saveCanvas();
+            saveCanvas();
+        }
     });
 
     ///////////////
@@ -203,7 +205,7 @@ require(['flowchart', 'paint', 'canvas', 'convert', 'jszip', 'config', 'filesave
     /////////////////
     // CANVAS HELPERS
 
-    function printOntoCanvas(operatorId) {
+    function printOntoCanvas() {
         cv.printOntoCanvas(currentCanvas());
     }
 
