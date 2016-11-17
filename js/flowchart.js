@@ -124,7 +124,7 @@ define(function () {
         return "operator_" + (current == operatorI ? 1 : ++current);
     };
 
-    var setData = function (key, value) {
+    var setOperatorData = function (key, value) {
         var data = getSelectedOperatorData();
         data[key] = value;
         updateOperator(data);
@@ -154,7 +154,7 @@ define(function () {
         getSelectedOperatorId: getSelectedOperatorId,
         getPreviousOperatorId: getPreviousOperatorId,
         getNextOperatorId: getNextOperatorId,
-        setData: setData,
+        setData: setOperatorData,
         switchOperators: switchOperators,
         getAllOperators: getAllOperators,
         getAllLinks: getAllLinks,

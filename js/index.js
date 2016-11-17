@@ -51,10 +51,12 @@ require(['flowchart', 'paint', 'canvas', 'convert', 'jszip', 'config', 'filesave
                 switch (e.which) {
                     case 37: // left
                         flowchart.switchOperators(flowchart.getPreviousOperatorId());
+                        console.log(flowchart.getSelectedOperatorId());
                         printOntoCanvas();
                         break;
                     case 39: // right
                         flowchart.switchOperators(flowchart.getNextOperatorId());
+                        console.log(flowchart.getSelectedOperatorId());
                         printOntoCanvas();
                         break;
                     default:
@@ -64,6 +66,78 @@ require(['flowchart', 'paint', 'canvas', 'convert', 'jszip', 'config', 'filesave
             e.preventDefault();
         }
     });
+
+    $('body').on({
+        'dragover dragenter': function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        },
+        'drop': function (e) {
+            var dataTransfer = e.originalEvent.dataTransfer;
+            if (dataTransfer && dataTransfer.files.length) {
+                e.preventDefault();
+                e.stopPropagation();
+                $.each(dataTransfer.files, function (i, file) {
+                    var reader = new FileReader();
+                    reader.readAsBinaryString(file);
+                    reader.onloadend = function () {
+                        var new_zip = new jszip();
+                        new_zip.loadAsync(reader.result)
+                            .then(function (zip) {
+                                parseZip(zip);
+                            });
+                    };
+                });
+            }
+        }
+    });
+
+    // TODO: move to an appropriate location
+    function parseZip(zip) {
+        var files = Object.keys(zip.files).map(function (key) {
+            return zip.files[key]
+        });
+        var images = files.filter(function (item) {
+            if (item.dir || item.name.startsWith('_')) {
+                return false;
+            }
+
+            var name = item.name.split('/')[1].split('.')[0];
+
+            if (isNaN(name) || name == "") {
+                return false;
+            }
+
+            item.frame_id = name;
+
+            return true;
+        });
+
+        images = images.sort(function (a, b) {
+            return a.frame_id - b.frame_id;
+        });
+
+        console.log(images);
+
+        loadNextImage(images, 0);
+    }
+
+    // TODO: move to an appropriate location
+    function loadNextImage(images, i) {
+        images[i].async("text").then(function (u8) {
+            saveToCanvas(convert.binToData(u8));
+            printOntoCanvas();
+
+            // save
+            saveCanvas();
+
+            if (++i != images.length) {
+                flowchart.buildNewOperator();
+
+                loadNextImage(images, i);
+            }
+        });
+    }
 
     ////////////////////
     // TOOLBAR LISTENERS
@@ -180,7 +254,7 @@ require(['flowchart', 'paint', 'canvas', 'convert', 'jszip', 'config', 'filesave
         mouseClicked = false;
 
         saveCanvas();
-    }).on("mouseout", function() {
+    }).on("mouseout", function () {
         if (mouseClicked) {
             mouseClicked = false;
 
