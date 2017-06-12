@@ -81,8 +81,11 @@ html, body {
 }
 
 .flowchart-operator {
+    background-color: #000000;
     background: url('http://orig04.deviantart.net/97d6/f/2014/257/b/5/animated_pixel_stars___box_background_by_driftwoodbones-d7z0h0p.gif');
-    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: contain;
     height: 140px !important;
 }
 

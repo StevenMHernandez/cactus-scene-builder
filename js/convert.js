@@ -1,11 +1,6 @@
 define(function (require) {
     var realDataToBin = function (data) {
-        var string = "";
-        for (var row in data) {
-            for (var column in data[row]) {
-                string += (data[row][column] == 1) ? "1" : "0";
-            }
-        }
+        var string = binaryArrayString(data);
 
         var chars = string.match(/.{8}/g).map(function(c) {
             return parseInt(c, 2);
@@ -64,8 +59,19 @@ define(function (require) {
         message.split("\n").forEach(function(line) {
             final.push(message.match(/.{1,8}/g));
         });
-        console.log(final);
         return final.join("\n");
+    };
+
+    var binaryArrayString = function(data) {
+        var string = "";
+
+        for (var row in data) {
+            for (var column in data[row]) {
+                string += (data[row][column] == 1) ? "1" : "0";
+            }
+        }
+
+        return string;
     };
 
     return {
@@ -73,5 +79,6 @@ define(function (require) {
         binToData: binToData,
         slugify: slugify,
         realDataToBin: realDataToBin,
-    }
+        binaryArrayString: binaryArrayString,
+    };
 });

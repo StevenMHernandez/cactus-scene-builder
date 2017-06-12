@@ -16,23 +16,20 @@ define(function (require) {
     };
 
     function setCanvasSize() {
-        editBox = document.getElementById("edit");
-        $editBox = $("#edit");
+        var $editBox = $("#edit");
 
         canvas.width = window.innerWidth - canvas.offsetLeft;
         canvas.height = window.innerHeight - canvas.offsetTop;
-
-        var widthToHeightRatio = 1; // normally 2, but we will only see the middle square
-
-        if ($editBox.width() / widthToHeightRatio > $editBox.height()) {
+        
+        if ($editBox.width() / config.width > $editBox.height() / config.height) {
             sz = $editBox.height() / config.height;
         } else {
-            sz = $editBox.width() / (config.height * widthToHeightRatio);
+            sz = $editBox.width() / config.width;
         }
         sz = Math.floor(sz);
 
         maxH = sz * config.height;
-        maxW = maxH * widthToHeightRatio;
+        maxW = sz * config.width;
 
         canvas.width = maxW;
         canvas.height = maxH;

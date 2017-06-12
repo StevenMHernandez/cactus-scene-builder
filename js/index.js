@@ -166,11 +166,20 @@ require(['flowchart', 'paint', 'canvas', 'convert', 'jszip', 'config', 'filesave
 
         var zip = new jszip();
 
+        var cArray = "";
+
         for (var i = 1; i <= flowchart.getOperatorCount(); i++) {
             var o = operators['operator_' + i];
             zip.file(i + ".bin", convert.realDataToBin(o.canvas));
+
+            convert.binaryArrayString(o.canvas).match(/.{8}/g).forEach(function(c) {
+                cArray += "0b" + c + ",\n";
+            });
+
+            cArray += "\n";
         }
 
+        zip.file("cArray.txt", cArray);
         zip.file("message.txt", $("#message").val());
         zip.file("config.txt", JSON.stringify({
             delay: $("#delay").val(),

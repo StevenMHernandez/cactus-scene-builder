@@ -1,5 +1,6 @@
 define(function () {
     return {
-        height: 64,
+        height: 3,
+        width: 8
     };
 });
