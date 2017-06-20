@@ -20,8 +20,7 @@ define(function (require) {
     };
 
     var floodFill = function (data, row, col, newValue) {
-        if (row < 0 || row >= config.height
-            || col < 0 || col >= config.height) {
+        if (row < 0 || row >= config.height || col < 0 || col >= config.width) {
             return data;
         }
 
@@ -40,7 +39,7 @@ define(function (require) {
     var shiftLeft = function (data) {
         for (var row in data) {
             for (var column = 0; column < data[row].length; column++) {
-                if (column != config.height - 1) {
+                if (column != config.width - 1) {
                     data[row][column] = data[row][column + 1];
                 } else {
                     data[row][column] = 0;
@@ -98,8 +97,8 @@ define(function (require) {
         invert: invert,
         floodFill: floodFill,
         shiftLeft: shiftLeft,
-        shiftUp:shiftUp,
+        shiftUp: shiftUp,
         shiftRight: shiftRight,
-        shiftDown:shiftDown,
+        shiftDown: shiftDown,
     };
 });

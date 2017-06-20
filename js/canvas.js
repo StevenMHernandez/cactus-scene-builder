@@ -20,7 +20,7 @@ define(function (require) {
 
         canvas.width = window.innerWidth - canvas.offsetLeft;
         canvas.height = window.innerHeight - canvas.offsetTop;
-        
+
         if ($editBox.width() / config.width > $editBox.height() / config.height) {
             sz = $editBox.height() / config.height;
         } else {
@@ -42,20 +42,31 @@ define(function (require) {
         ctx.strokeStyle = '#999';
         ctx.lineWidth = 1;
 
-        for (var i = 0; i < canvas.width && i < maxW; i += sz) {
-            ctx.beginPath();
-            ctx.moveTo(i - 1, 0);
-            ctx.lineTo(i - 1, maxH);
-            ctx.stroke();
-        }
-        for (i = 0; i < canvas.height && i < maxH; i += sz) {
-            ctx.beginPath();
-            ctx.moveTo(0, i - 1);
-            ctx.lineTo(maxW, i - 1);
-            ctx.stroke();
-        }
+        var i;
+        if (config.circles) {
+            for (i = 0; i < canvas.width && i < maxW; i += sz) {
+                for (var j = 0; j < canvas.height && j < maxH; j += sz) {
+                    ctx.beginPath();
+                    ctx.arc(i + (sz / 2), j + (sz / 2), sz / 2 - 2, 0, 2 * Math.PI);
+                    ctx.stroke();
+                }
+            }
+        } else {
+            for (i = 0; i < canvas.width && i < maxW; i += sz) {
+                ctx.beginPath();
+                ctx.moveTo(i - 1, 0);
+                ctx.lineTo(i - 1, maxH);
+                ctx.stroke();
+            }
+            for (i = 0; i < canvas.height && i < maxH; i += sz) {
+                ctx.beginPath();
+                ctx.moveTo(0, i - 1);
+                ctx.lineTo(maxW, i - 1);
+                ctx.stroke();
+            }
 
-        canvas.style.border = "1px solid #666";
+            canvas.style.border = "1px solid #666";
+        }
     }
 
     var printOntoCanvas = function (data) {
@@ -63,7 +74,14 @@ define(function (require) {
             for (var column in data[row]) {
                 ctx.fillStyle = data[row][column] ? "white" : "black";
 
-                ctx.fillRect(column * sz, row * sz, sz - 2, sz - 2);
+                if (config.circles) {
+                    var halfSz = sz / 2;
+                    ctx.beginPath();
+                    ctx.arc(column * sz + halfSz, row * sz + halfSz, sz / 2 - 2, 0, 2 * Math.PI);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(column * sz, row * sz, sz - 2, sz - 2);
+                }
             }
         }
     };
@@ -73,7 +91,7 @@ define(function (require) {
         for (var y = 0; y < canvas.height && y < maxH + 1; y += sz) {
             var row = [];
             for (var x = 0; x < canvas.width && x < maxW + 1; x += sz) {
-                row.push(ctx.getImageData(x, y, 1, 1).data[0] > 128);
+                row.push(ctx.getImageData(x + (sz / 2), y + (sz / 2), 1, 1).data[0] > 128);
             }
             val.push(row);
         }
@@ -85,7 +103,19 @@ define(function (require) {
         if (color) {
             ctx.fillStyle = color;
         }
-        ctx.fillRect(Math.floor(x / sz) * sz, Math.floor(y / sz) * sz, sz - 2, sz - 2);
+
+        if (config.circles) {
+            var halfSz = sz / 2;
+            ctx.beginPath();
+            ctx.arc(Math.floor(x / sz) * sz + halfSz, Math.floor(y / sz) * sz + halfSz, sz / 2 - 2, 0, 2 * Math.PI);
+            ctx.fill();
+            if (color !== "white") {
+                ctx.strokeStyle = '#999';
+                ctx.stroke();
+            }
+        } else {
+            ctx.fillRect(Math.floor(x / sz) * sz, Math.floor(y / sz) * sz, sz - 2, sz - 2);
+        }
     };
 
 
